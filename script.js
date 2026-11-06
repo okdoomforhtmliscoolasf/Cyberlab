@@ -1,124 +1,42 @@
-(() => {
-  const $ = (s, root=document) => root.querySelector(s);
-  const content = $('#module-content');
-  const modules = ['phishing','passwords','logs','network','response'];
-  let completed = new Set();
-  let current = 'phishing';
-  const meta = {
-    phishing:['MODULE 01 / AWARENESS','Signal spotting','INTERACTIVE EXERCISE'],
-    passwords:['MODULE 02 / IDENTITY','Password basics','LOCAL DEMO'],
-    logs:['MODULE 03 / OBSERVATION','Read the logs','FICTIONAL DATA'],
-    network:['MODULE 04 / FOUNDATIONS','Network basics','QUICK REFERENCE'],
-    response:['MODULE 05 / DECISIONS','Incident response','SCENARIO SIMULATOR']
-  };
-  const setProgress = () => {
-    $('#progress-label').textContent = `${completed.size} / 5 MODULES`;
-    document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('done', completed.has(b.dataset.module)));
-  };
-  const finish = id => { completed.add(id); setProgress(); };
-  function show(id) {
-    current=id;
-    document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.module===id));
-    const m=meta[id]; $('#module-kicker').textContent=m[0]; $('#module-title').textContent=m[1]; $('#module-tag').textContent=m[2];
-    $('#module-count').textContent=`${String(modules.indexOf(id)+1).padStart(2,'0')} — 05`;
-    ({phishing, passwords, logs, network, response}[id])();
-  }
-  document.querySelectorAll('.nav-item').forEach(b=>b.addEventListener('click',()=>show(b.dataset.module)));
-
-  function phishing(){
-    content.innerHTML=`
-      <p class="exercise-intro">A message lands in your inbox. Inspect the details and choose the safest next step. Look for urgency, mismatched sender details and unusual requests.</p>
-      <div class="prompt-card">
-        <div class="prompt-top"><span>INCOMING MESSAGE / SAMPLE 014</span><span>09:42 AM</span></div>
-        <div class="mail-from">From: Account Support &lt;helpdesk@secure-account-alert.example&gt;</div>
-        <div class="mail-from">To: learner@sample.local</div>
-        <div class="mail-subject">ACTION REQUIRED: Your account will close today</div>
-        <div class="mail-body">Hello,<br><br>We noticed unusual activity. Your account access will be paused in 30 minutes. Use the button below to confirm your details immediately.<br><br><u>Review account now</u><br><br>Support Team</div>
-      </div>
-      <div class="eyebrow">WHAT WOULD YOU DO?</div>
-      <div class="choice-grid">
-        <button class="choice" data-answer="a">A — Click quickly so the account isn't closed</button>
-        <button class="choice" data-answer="b">B — Don't click; verify through the official app or known website</button>
-        <button class="choice" data-answer="c">C — Reply and ask the sender to prove who they are</button>
-        <button class="choice" data-answer="d">D — Forward it to friends to ask if it's real</button>
-      </div><div id="phish-feedback" aria-live="polite"></div>
-      <div class="action-row"><button class="secondary" id="phish-reset">RESET EXERCISE ↺</button></div>`;
-    content.querySelectorAll('[data-answer]').forEach(b=>b.addEventListener('click',()=>{
-      content.querySelectorAll('[data-answer]').forEach(x=>x.classList.remove('selected')); b.classList.add('selected');
-      const good=b.dataset.answer==='b'; $('#phish-feedback').innerHTML=`<div class="feedback ${good?'':'bad'}"><strong>${good?'Good call.':'Not the safest choice.'}</strong> ${good?'Urgent deadlines and requests to confirm details are warning signs. Open the service independently using a trusted route, and report the message through the proper channel.':'Avoid interacting with suspicious messages. Do not use their links or reply. Verify independently through a known official channel.'}</div>`;
-      if(good) finish('phishing');
-    }));
-    $('#phish-reset').addEventListener('click',phishing);
-  }
-
-  function passwords(){
-    content.innerHTML=`
-      <p class="exercise-intro">Explore how password length and variety affect a password's resilience. This is a simple educational estimate, not a real security audit.</p>
-      <div class="prompt-card"><div class="prompt-top"><span>LOCAL PASSWORD DEMO</span><span>NOT SENT ANYWHERE</span></div>
-      <label class="field-label" for="demo-pass">TYPE A FICTIONAL EXAMPLE — NEVER YOUR REAL PASSWORD</label>
-      <input class="text-field" id="demo-pass" type="text" autocomplete="off" placeholder="Try a made-up example">
-      <div class="meter"><div class="meter-fill" id="meter-fill"></div></div>
-      <p id="pass-rating" class="hint">Enter a made-up example to see general guidance.</p></div>
-      <div class="concept-grid">
-        <div class="concept"><strong>Longer is better</strong><p>Long, unique passphrases are generally harder to guess than short, predictable ones.</p></div>
-        <div class="concept"><strong>Unique per account</strong><p>Don't reuse passwords. A password manager can help keep unique credentials.</p></div>
-        <div class="concept"><strong>Use MFA</strong><p>Multi-factor authentication adds another check beyond a password.</p></div>
-        <div class="concept"><strong>Keep it private</strong><p>Never share passwords in chats, forms or with people claiming to be support.</p></div>
-      </div>`;
-    $('#demo-pass').addEventListener('input',e=>{
-      const v=e.target.value; const len=v.length; const variety=[/[a-z]/.test(v),/[A-Z]/.test(v),/[0-9]/.test(v),/[^A-Za-z0-9]/.test(v)].filter(Boolean).length;
-      let score=Math.min(100,Math.max(0,(len*5)+(variety*8)-( /(123|password|qwerty|admin)/i.test(v)?28:0 )));
-      $('#meter-fill').style.width=score+'%';
-      let msg=len===0?'Enter a made-up example to see general guidance.':len<12?'Short example: try a longer, unique passphrase.':score<65?'Getting better. Aim for length, uniqueness and unpredictability.':'Stronger-looking example. A password manager and MFA still matter.';
-      $('#pass-rating').textContent=msg;
-      if(len>=12)finish('passwords');
-    });
-  }
-
-  const rows=[
-    ['09:11:03','LOGIN','user-014','Successful sign-in','normal'],
-    ['09:14:27','LOGIN','user-014','Failed sign-in attempt','review'],
-    ['09:14:31','LOGIN','user-014','Failed sign-in attempt','review'],
-    ['09:15:02','FILE','user-022','Opened shared handbook','normal'],
-    ['09:18:44','ACCESS','user-014','New device approval requested','review'],
-    ['09:22:10','UPDATE','system','Routine software update','normal']
-  ];
-  function logs(){
-    content.innerHTML=`<p class="exercise-intro">These fictional audit events come from a made-up training environment. Mark the events you would investigate first. One unusual event is not proof of wrongdoing; context matters.</p>
-    <div class="prompt-top"><span>TRAINING LOG / DAY 04</span><span>6 EVENTS</span></div>
-    <table class="log-table"><thead><tr><th>TIME</th><th>TYPE</th><th>ACTOR</th><th>EVENT</th><th>REVIEW?</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td><button data-log="${i}">FLAG</button></td></tr>`).join('')}</tbody></table>
-    <div id="log-feedback" aria-live="polite" class="hint">Tip: repeated failed sign-ins and unexpected approval requests deserve context and review.</div>
-    <div class="action-row"><button class="primary" id="check-logs">CHECK MY REVIEW</button><button class="secondary" id="clear-logs">CLEAR</button></div>`;
-    const flagged=new Set();
-    content.querySelectorAll('[data-log]').forEach(b=>b.addEventListener('click',()=>{const i=+b.dataset.log;if(flagged.has(i)){flagged.delete(i);b.textContent='FLAG';b.closest('tr').className='';}else{flagged.add(i);b.textContent='FLAGGED';b.closest('tr').className='flagged';}}));
-    $('#clear-logs').addEventListener('click',logs);
-    $('#check-logs').addEventListener('click',()=>{const correct=[1,2,4];const hits=correct.filter(x=>flagged.has(x)).length;const extras=[...flagged].filter(x=>!correct.includes(x)).length;$('#log-feedback').innerHTML=`<div class="feedback ${hits===3&&extras===0?'':'bad'}"><strong>${hits===3&&extras===0?'Nice analysis.':'Review the context again.'}</strong> You flagged ${hits} of 3 suggested events${extras?`, with ${extras} extra flag(s)`:''}. Repeated failures and a new-device approval request are worth checking. This is a learning example, not a verdict.</div>`;if(hits===3&&extras===0)finish('logs');});
-  }
-
-  function network(){
-    content.innerHTML=`<p class="exercise-intro">A quick field guide to common network concepts. Tap a card to reveal the everyday analogy.</p>
-    <div class="concept-grid" id="network-cards">
-      <button class="concept reveal"><strong>IP address</strong><p>A numerical address used to identify an interface on a network. <em>Tap for analogy.</em></p></button>
-      <button class="concept reveal"><strong>DNS</strong><p>Translates human-readable domain names into the addresses computers use. <em>Tap for analogy.</em></p></button>
-      <button class="concept reveal"><strong>Router</strong><p>Forwards traffic between networks. <em>Tap for analogy.</em></p></button>
-      <button class="concept reveal"><strong>HTTPS</strong><p>HTTP protected by encryption using TLS. <em>Tap for analogy.</em></p></button>
-      <button class="concept reveal"><strong>Firewall</strong><p>Applies rules to allow or block network traffic. <em>Tap for analogy.</em></p></button>
-      <button class="concept reveal"><strong>Packet</strong><p>A small formatted unit of data carried across a network. <em>Tap for analogy.</em></p></button>
-    </div><div id="network-feedback" class="hint">Reveal all six cards to complete this module.</div>`;
-    const analogies=['Like a delivery address for a device on a network.','Like a contacts list that finds the number behind a name.','Like a road junction directing traffic to the right route.','Like a sealed, private envelope between your browser and a website.','Like a checkpoint that follows a set of entry rules.','Like one labelled parcel in a larger delivery.'];
-    let opened=new Set();
-    content.querySelectorAll('.reveal').forEach((b,i)=>b.addEventListener('click',()=>{b.querySelector('p').textContent=analogies[i];opened.add(i);$('#network-feedback').textContent=`${opened.size} / 6 concepts explored`;if(opened.size===6)finish('network');}));
-  }
-
-  const steps=[
-    {q:'A teammate reports a suspicious message asking them to sign in. What is your first move?',a:['Tell them not to click and preserve the message for reporting','Try the link yourself to see where it goes','Delete everything immediately'],correct:0,why:'Avoid interacting with the link. Preserve useful evidence and use the organisation’s reporting process.'},
-    {q:'You suspect an account may be compromised. What next?',a:['Ignore it until more alerts arrive','Follow the organisation’s approved account-security and incident reporting process','Post the details publicly'],correct:1,why:'Use the approved response process and notify the responsible support or security team. Don’t investigate beyond your role.'},
-    {q:'After reporting, what helps the response team?',a:['Share clear facts: time, system, message and what happened','Guess who caused it','Change unrelated settings'],correct:0,why:'Accurate observations help responders assess the situation. Separate facts from assumptions.'}
-  ];
-  function response(){
-    let step=0;
-    const draw=()=>{const s=steps[step];content.innerHTML=`<p class="exercise-intro">Work through a fictional workplace scenario. Choose the safest defender action at each stage.</p><div class="prompt-top"><span>SCENARIO / ${String(step+1).padStart(2,'0')} OF 03</span><span>DECISION PRACTICE</span></div><div class="progress-track"><div style="width:${step/3*100}%"></div></div><div class="scenario-step">${s.q}</div><div class="choice-grid">${s.a.map((x,i)=>`<button class="choice" data-step="${i}">${String.fromCharCode(65+i)} — ${x}</button>`).join('')}</div><div id="response-feedback" aria-live="polite"></div>`;content.querySelectorAll('[data-step]').forEach(b=>b.addEventListener('click',()=>{content.querySelectorAll('.choice').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');const good=+b.dataset.step===s.correct;$('#response-feedback').innerHTML=`<div class="feedback ${good?'':'bad'}"><strong>${good?'Good decision.':'Try a safer approach.'}</strong> ${s.why}</div><div class="action-row"><button class="primary" id="next-step">${step===2?'FINISH SCENARIO':'NEXT STEP →'}</button></div>`;$('#next-step').addEventListener('click',()=>{if(!good){b.classList.remove('selected');$('#response-feedback').innerHTML='';return;}if(step<2){step++;draw();}else{finish('response');content.innerHTML=`<div class="prompt-card"><div class="eyebrow">SCENARIO COMPLETE</div><h2>Calm, careful, documented.</h2><p class="exercise-intro">You completed the incident-response scenario. Remember: follow your organisation’s process, stay within your role and report observations clearly.</p><button class="primary" id="restart-response">RUN IT AGAIN ↺</button></div>`;$('#restart-response').addEventListener('click',response);}});}));};draw();
-  }
-
-  show('phishing');
+(()=>{'use strict';
+const $=s=>document.querySelector(s),root=$('#view-root');
+const names=['phishing','passwords','logs','network','response','quiz'];
+const info={
+phishing:{num:'01',icon:'↗',title:'Signal spotting',desc:'Inspect a fictional message and identify warning signs.',xp:100},
+passwords:{num:'02',icon:'⌁',title:'Password lab',desc:'Explore length, uniqueness and safer account habits.',xp:100},
+logs:{num:'03',icon:'≋',title:'Log investigator',desc:'Triage fictional audit events using evidence, not assumptions.',xp:150},
+network:{num:'04',icon:'⌘',title:'Network school',desc:'Learn the building blocks behind everyday networking.',xp:100},
+response:{num:'05',icon:'＋',title:'Incident room',desc:'Practise calm, safe incident-response decisions.',xp:150},
+quiz:{num:'06',icon:'◎',title:'Knowledge check',desc:'Test what you have learned across the training deck.',xp:200}
+};
+let state={done:[],xp:0,logsSolved:false,quizSolved:false};
+try{const saved=JSON.parse(localStorage.getItem('cyberlab-v10'));if(saved&&Array.isArray(saved.done)){state={...state,...saved}}}catch(e){}
+let active='overview',toastTimer;
+function save(){try{localStorage.setItem('cyberlab-v10',JSON.stringify(state))}catch(e){}updateStats()}
+function notify(t){const el=$('#toast');el.textContent=t;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2200)}
+function award(id,xp){if(!state.done.includes(id)){state.done.push(id);state.xp+=xp;save();notify(`MODULE COMPLETE  +${xp} XP`)}else notify('ALREADY COMPLETED — KEEP PRACTISING')}
+function rank(){return state.xp>=650?'FIELD SPECIALIST':state.xp>=400?'ANALYST':state.xp>=200?'SCOUT':'ROOKIE'}
+function updateStats(){$('#stat-complete').innerHTML=`${state.done.length} <small>/ 6</small>`;$('#stat-xp').textContent=String(state.xp).padStart(3,'0');$('#stat-rank').textContent=rank();$('#stat-next').textContent=state.done.length===6?'ALL MODULES CLEARED':'KEEP BUILDING YOUR SKILLS';$('#stat-progress').style.width=(state.done.length/6*100)+'%';$('#stat-streak').innerHTML='01 <small>DAY</small>'}
+function nav(id){active=id;document.querySelectorAll('.nav').forEach(b=>b.classList.toggle('active',b.dataset.view===id));id==='overview'?overview():({phishing,passwords,logs,network,response,quiz}[id])()}
+document.querySelectorAll('.nav').forEach(b=>b.addEventListener('click',()=>nav(b.dataset.view)));
+$('#theme-toggle').addEventListener('click',()=>{document.body.classList.toggle('dark');try{localStorage.setItem('cyberlab-theme',document.body.classList.contains('dark')?'dark':'light')}catch(e){}});
+try{if(localStorage.getItem('cyberlab-theme')==='dark')document.body.classList.add('dark')}catch(e){}
+function head(kicker,title,desc,tag='TRAINING MODULE'){return `<div class="section-head"><div><div class="section-kicker">${kicker}</div><h2>${title}</h2><div class="section-desc">${desc}</div></div><span class="tag">${tag}</span></div>`}
+function overview(){root.innerHTML=head('CONTROL ROOM / OVERVIEW','Your training deck','Six practical modules. Progress saves on this device automatically.','BUILD 10.0')+`<div class="cards">${names.map(id=>{let m=info[id],done=state.done.includes(id);return `<button class="module-card" data-open="${id}"><div class="card-top"><span>MODULE ${m.num}</span><span>${done?'✓ CLEARED':'NOT STARTED'}</span></div><div class="card-symbol">${m.icon}</div><h3>${m.title}</h3><p>${m.desc}</p><div class="card-bottom"><span>${m.xp} XP / EXERCISE</span><b>↗</b></div><div class="progress-mini"><i style="width:${done?'100':'0'}%"></i></div></button>`}).join('')}</div><div class="cols"><div class="panel"><div class="panel-head"><h3>FIELD NOTE / 001</h3><span class="mono">READ THIS FIRST</span></div><p class="copy">Cybersecurity is not just tools and code. It is careful observation, good judgement, clear communication and respect for boundaries. These labs use fictional examples and teach defensive habits only.</p></div><div class="panel"><div class="panel-head"><h3>SESSION STATUS</h3><span class="mono">LOCAL SAVE</span></div><p class="copy">Your module progress is stored in this browser on this device. It is not uploaded to a server.</p><button class="btn alt" id="reset-progress">RESET MY PROGRESS</button></div></div>`;
+root.querySelectorAll('[data-open]').forEach(b=>b.addEventListener('click',()=>nav(b.dataset.open)));$('#reset-progress').addEventListener('click',()=>{if(confirm('Reset all CyberLab progress on this device?')){state={done:[],xp:0,logsSolved:false,quizSolved:false};save();overview();notify('LOCAL PROGRESS RESET')}});
+}
+function phishing(){root.innerHTML=head('MODULE 01 / AWARENESS','Signal spotting','Inspect this fictional inbox message. Select the safest action.','INTERACTIVE CASE')+`<div class="cols"><div class="panel"><div class="panel-head"><h3>INCOMING MESSAGE / SAMPLE 014</h3><span class="pill">09:42 AM</span></div><div class="mono">FROM: Account Support &lt;helpdesk@secure-account-alert.example&gt;</div><h3 style="font-size:21px;letter-spacing:-.05em">ACTION REQUIRED: Your account will close today</h3><p class="copy">We noticed unusual activity. Your access will be paused in 30 minutes. Use the button below to confirm your details immediately.<br><br><u>Review account now</u><br><br>Support Team</p><div class="tag">FICTIONAL TRAINING EMAIL</div></div><div class="panel"><div class="panel-head"><h3>YOUR CALL</h3><span class="mono">CHOOSE ONE</span></div><p class="copy">What is the safest next step?</p><div class="choicegrid" style="grid-template-columns:1fr"><button class="choice" data-a="0">Click quickly to avoid losing access</button><button class="choice" data-a="1">Open the service independently using a trusted route</button><button class="choice" data-a="2">Reply and ask the sender to prove their identity</button><button class="choice" data-a="3">Forward the message to friends</button></div><div id="fb"></div></div></div><div class="btnrow"><button class="btn alt" id="reset">RESET EXERCISE ↺</button></div>`;
+root.querySelectorAll('[data-a]').forEach(b=>b.addEventListener('click',()=>{root.querySelectorAll('[data-a]').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');let ok=b.dataset.a==='1';$('#fb').innerHTML=`<div class="feedback ${ok?'':'bad'}"><b>${ok?'Good call.':'Not the safest option.'}</b> ${ok?'Urgency and requests for account details are warning signs. Avoid the message link; verify through a known official app or address and report it.':'Do not interact with suspicious messages. Avoid links and replies. Verify independently through a trusted official channel.'}</div>`;if(ok)award('phishing',info.phishing.xp)}));$('#reset').addEventListener('click',phishing)}
+function passwords(){root.innerHTML=head('MODULE 02 / IDENTITY','Password lab','A local-only educational demo. Use made-up examples only — never type a real password.','NO DATA SENT')+`<div class="cols"><div class="panel"><div class="panel-head"><h3>ESTIMATE A SAMPLE</h3><span class="pill">LOCAL ONLY</span></div><label class="fieldlabel" for="sample">MADE-UP PASSWORD EXAMPLE</label><input class="field" id="sample" type="text" autocomplete="off" placeholder="e.g. river-maple-cloud-..." aria-describedby="strength"><div class="meter"><i id="meter"></i></div><div id="strength" class="meter-label">Enter a fictional example to see general guidance.</div><p class="copy">This is a simplified teaching indicator, not a crack-time calculator or security audit.</p></div><div class="panel"><div class="panel-head"><h3>DEFENDER CHECKLIST</h3><span class="mono">GOOD HABITS</span></div><p class="copy">✓ Use long, unique passphrases.<br>✓ Never reuse credentials across accounts.<br>✓ Use a reputable password manager.<br>✓ Turn on multi-factor authentication.<br>✓ Never share passwords in chats or forms.</p></div></div>`;
+$('#sample').addEventListener('input',e=>{let v=e.target.value,len=v.length,classes=[/[a-z]/.test(v),/[A-Z]/.test(v),/[0-9]/.test(v),/[^A-Za-z0-9]/.test(v)].filter(Boolean).length;let score=Math.min(100,Math.max(0,len*5+classes*7-(/password|123456|qwerty|admin/i.test(v)?25:0)));$('#meter').style.width=score+'%';$('#strength').textContent=!len?'Enter a fictional example to see general guidance.':len<14?'Try a longer passphrase with several unrelated words.':score<70?'Better length. Make it unique and unpredictable.':'Promising example. Uniqueness and MFA still matter.';if(len>=14)award('passwords',info.passwords.xp)})}
+const logData=[['08:01:03','AUTH','learner-04','Successful sign-in','normal'],['08:04:21','AUTH','learner-04','Failed sign-in attempt','review'],['08:04:25','AUTH','learner-04','Failed sign-in attempt','review'],['08:07:10','FILE','learner-12','Opened shared handbook','normal'],['08:11:44','ACCESS','learner-04','New device approval requested','review'],['08:16:02','UPDATE','system','Routine software update','normal'],['08:19:40','AUTH','learner-08','Successful sign-in','normal']];
+function logs(){root.innerHTML=head('MODULE 03 / OBSERVATION','Log investigator','Triage fictional audit events. Flag what deserves review; a signal is not proof of an incident.','FICTIONAL DATA')+`<div class="panel"><div class="panel-head"><h3>TRAINING AUDIT / EVENT STREAM</h3><span class="mono">7 EVENTS / SAMPLE DAY 04</span></div><div class="tablewrap"><table class="table"><thead><tr><th>TIME</th><th>TYPE</th><th>ACTOR</th><th>EVENT</th><th>REVIEW</th></tr></thead><tbody>${logData.map((r,i)=>`<tr data-row="${i}"><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td><button data-flag="${i}">FLAG</button></td></tr>`).join('')}</tbody></table></div><div id="logfb" class="copy">Suggested review: repeated failed sign-ins and an unexpected new-device approval request.</div><div class="btnrow"><button class="btn" id="checklogs">SUBMIT TRIAGE</button><button class="btn alt" id="clearlogs">CLEAR FLAGS</button></div></div>`;
+let flagged=new Set();root.querySelectorAll('[data-flag]').forEach(b=>b.addEventListener('click',()=>{let i=+b.dataset.flag;if(flagged.has(i)){flagged.delete(i);b.textContent='FLAG';$(`[data-row="${i}"]`).classList.remove('marked')}else{flagged.add(i);b.textContent='FLAGGED';$(`[data-row="${i}"]`).classList.add('marked')}}));$('#clearlogs').addEventListener('click',logs);$('#checklogs').addEventListener('click',()=>{let target=[1,2,4],hit=target.filter(i=>flagged.has(i)).length,extra=[...flagged].filter(i=>!target.includes(i)).length,ok=hit===3&&!extra;$('#logfb').innerHTML=`<div class="feedback ${ok?'':'bad'}"><b>${ok?'Clean triage.':'Take another look.'}</b> You identified ${hit}/3 suggested review events${extra?` and added ${extra} extra flags`:''}. Repeated failures and a new-device approval request deserve contextual review, not assumptions.</div>`;if(ok)award('logs',info.logs.xp)})}
+const concepts=[['IP ADDRESS','A network address assigned to an interface.','Like a delivery address that helps route information to the right device.'],['DNS','Maps domain names to network addresses.','Like a contacts list that finds the number behind a saved name.'],['ROUTER','Forwards traffic between networks.','Like a road junction directing traffic toward another route.'],['HTTPS','HTTP protected with TLS encryption.','Like a protected channel between a browser and a website.'],['FIREWALL','Applies rules to network traffic.','Like a checkpoint that follows a set of entry rules.'],['PACKET','A formatted unit of data sent over a network.','Like one labelled parcel in a larger delivery.'],['PORT','A logical endpoint used by network services.','Like a numbered counter at a large service building.'],['LATENCY','The delay before data is transferred or a response arrives.','Like the time between asking a question and hearing an answer.'],['VPN','Creates an encrypted connection to a VPN endpoint.','Like a private tunnel for traffic between your device and the VPN service.']];
+function network(){root.innerHTML=head('MODULE 04 / FOUNDATIONS','Network school','Tap each card to reveal a plain-language analogy. These are concepts, not instructions for probing networks.','QUICK REFERENCE')+`<div class="concepts">${concepts.map((c,i)=>`<button class="concept" data-concept="${i}"><strong>${c[0]}</strong><span>${c[1]}<br><br><b>TAP TO REVEAL ANALOGY ↗</b></span></button>`).join('')}</div><div id="netfb" class="copy" style="margin-top:12px">0 / 9 concepts explored</div>`;let opened=new Set();root.querySelectorAll('[data-concept]').forEach(b=>b.addEventListener('click',()=>{let i=+b.dataset.concept;b.classList.add('open');b.querySelector('span').innerHTML=concepts[i][1]+'<br><br><b>ANALOGY:</b> '+concepts[i][2];opened.add(i);$('#netfb').textContent=`${opened.size} / 9 concepts explored`;if(opened.size===9)award('network',info.network.xp)}))}
+const steps=[{q:'A colleague receives a suspicious message asking them to sign in. What is the safest first action?',a:['Tell them not to click and use the approved reporting route','Open the link yourself to inspect it','Post the message publicly'],c:0,why:'Avoid interacting with the link. Preserve the message and report it through the approved channel.'},{q:'A user suspects their account may be compromised. What should happen next?',a:['Ignore it until another alert appears','Follow the organisation’s account-security and incident-reporting process','Try random fixes on the system'],c:1,why:'Use the established response process and notify the responsible support or security team.'},{q:'What information is useful to responders?',a:['Clear facts: time, service, observed message and actions taken','Guesses about who is responsible','Unverified claims shared publicly'],c:0,why:'Accurate observations help responders assess what happened. Separate facts from assumptions.'},{q:'You are not the assigned responder. What is the right boundary?',a:['Keep testing until you find the cause','Stay within your role and hand off to the authorised team','Ask others to try the same thing'],c:1,why:'Do not investigate beyond your authorisation. A clean handoff is a security skill.'}];
+function response(){let step=0,answers=[];const draw=()=>{let s=steps[step];root.innerHTML=head('MODULE 05 / DECISION MAKING','Incident room','A fictional workplace scenario. Pick the safest defender action at each stage.','SCENARIO SIMULATOR')+`<div class="panel"><div class="panel-head"><h3>CASE FILE / ${String(step+1).padStart(2,'0')} OF ${steps.length}</h3><span class="mono">DECISION PRACTICE</span></div><div class="stepbar"><i style="width:${step/steps.length*100}%"></i></div><div class="scenario">${s.q}</div><div class="choicegrid">${s.a.map((a,i)=>`<button class="choice" data-pick="${i}">${String.fromCharCode(65+i)} — ${a}</button>`).join('')}</div><div id="resfb"></div></div>`;root.querySelectorAll('[data-pick]').forEach(b=>b.addEventListener('click',()=>{root.querySelectorAll('.choice').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');let ok=+b.dataset.pick===s.c;$('#resfb').innerHTML=`<div class="feedback ${ok?'':'bad'}"><b>${ok?'Good decision.':'Try a safer approach.'}</b> ${s.why}</div><div class="btnrow"><button class="btn" id="continue" ${ok?'':'disabled'}>${step===steps.length-1?'COMPLETE CASE':'NEXT STEP →'}</button></div>`;if(ok)answers[step]=true;$('#continue').addEventListener('click',()=>{if(!ok)return;if(step<steps.length-1){step++;draw()}else{award('response',info.response.xp);root.innerHTML=head('CASE CLOSED / SUMMARY','Calm. Careful. Documented.','You completed the incident-response scenario.','COMPLETE')+`<div class="panel"><p class="copy">You chose safe actions across ${answers.filter(Boolean).length} decision points. Remember: follow the approved process, stay within your role and report observations clearly.</p><button class="btn alt" id="again">RUN SCENARIO AGAIN ↺</button></div>`;$('#again').addEventListener('click',response)}})}))};draw()}
+const questions=[{q:'Which is the safest way to verify an urgent account alert?',a:['Use the link in the message','Open the official service independently','Reply with account details'],c:1,why:'Verify using a known trusted route, not the message link.'},{q:'What does DNS primarily do?',a:['Maps domain names to network addresses','Encrypts every file on a device','Blocks all malicious messages'],c:0,why:'DNS helps translate domain names into addresses used by networks.'},{q:'What is a useful response to repeated failed sign-ins in logs?',a:['Assume a breach immediately','Ignore them','Review context and follow the reporting process'],c:2,why:'Logs provide signals. Investigate context and use the appropriate process.'},{q:'Which habit improves account security?',a:['Reuse one password everywhere','Use unique passwords and MFA','Share passwords with teammates'],c:1,why:'Unique credentials limit reuse risk, and MFA adds another layer.'},{q:'If you lack authorisation to test a system, what should you do?',a:['Try a small test anyway','Ask for proper permission and scope first','Use a different account'],c:1,why:'Only assess systems when you have explicit permission and a defined scope.'}];
+function quiz(){let i=0,score=0;const draw=()=>{let q=questions[i];root.innerHTML=head('MODULE 06 / KNOWLEDGE CHECK','Final knowledge check','Five questions across the training deck. A pass requires at least four correct answers.','ASSESSMENT')+`<div class="panel"><div class="panel-head"><h3>QUESTION ${i+1} / ${questions.length}</h3><span class="mono">SCORE ${score}</span></div><div class="stepbar"><i style="width:${i/questions.length*100}%"></i></div><p class="quiz-q">${q.q}</p><div class="choicegrid">${q.a.map((a,n)=>`<button class="choice" data-q="${n}">${String.fromCharCode(65+n)} — ${a}</button>`).join('')}</div><div id="quizfb"></div></div>`;root.querySelectorAll('[data-q]').forEach(b=>b.addEventListener('click',()=>{root.querySelectorAll('.choice').forEach(x=>x.disabled=true);let ok=+b.dataset.q===q.c;if(ok)score++;b.classList.add('selected');$('#quizfb').innerHTML=`<div class="feedback ${ok?'':'bad'}"><b>${ok?'Correct.':'Not quite.'}</b> ${q.why}</div><div class="btnrow"><button class="btn" id="qnext">${i===questions.length-1?'SEE RESULTS':'NEXT QUESTION →'}</button></div>`;$('#qnext').addEventListener('click',()=>{if(i<questions.length-1){i++;draw()}else{let passed=score>=4;if(passed)award('quiz',info.quiz.xp);root.innerHTML=head('ASSESSMENT / RESULTS','You scored '+score+' / 5',passed?'You passed the CyberLab knowledge check.':'Review the modules and try again.','RESULTS')+`<div class="panel"><div class="scenario">${passed?'DEFENDER IN TRAINING ✓':'BACK TO THE FIELD NOTES ↺'}</div><p class="copy">${passed?'Strong work. Keep practising careful verification and responsible boundaries.':'You need 4 correct answers to pass. Revisit the modules, then retake the check.'}</p><button class="btn" id="retake">RETAKE KNOWLEDGE CHECK</button></div>`;$('#retake').addEventListener('click',quiz)}})}))};draw()}
+updateStats();overview();
 })();
