@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#e9e6df">
+  <title>CyberLab — Learn security by doing</title>
+  <link rel="stylesheet" href="style.css?v=1">
+  <script src="script.js?v=1" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="CyberLab home"><span class="brand-mark">C/</span> CYBERLAB <span class="version">FIELD NOTES 001</span></a>
+    <div class="top-right"><span class="status-dot"></span> LOCAL TRAINING MODE <span class="top-divider">/</span> <span id="progress-label">0 / 5 MODULES</span></div>
+  </header>
+
+  <main class="shell">
+    <section class="intro">
+      <div class="eyebrow">A HANDS-ON SECURITY WORKSHOP</div>
+      <h1>Think like a<br><span>defender.</span></h1>
+      <p class="intro-copy">Learn to spot suspicious signals, understand systems, and make safer decisions. Every exercise runs locally with fictional data.</p>
+      <div class="intro-stats">
+        <div><strong>05</strong><small>TRAINING MODULES</small></div>
+        <div><strong>100%</strong><small>SIMULATED DATA</small></div>
+        <div><strong>0</strong><small>REAL TARGETS</small></div>
+      </div>
+    </section>
+
+    <section class="dashboard">
+      <aside class="sidebar">
+        <div class="side-label">TRAINING DECK</div>
+        <nav id="module-nav" aria-label="Training modules">
+          <button class="nav-item active" data-module="phishing"><span>01</span> Signal spotting <b>↗</b></button>
+          <button class="nav-item" data-module="passwords"><span>02</span> Password basics <b>↗</b></button>
+          <button class="nav-item" data-module="logs"><span>03</span> Read the logs <b>↗</b></button>
+          <button class="nav-item" data-module="network"><span>04</span> Network basics <b>↗</b></button>
+          <button class="nav-item" data-module="response"><span>05</span> Incident response <b>↗</b></button>
+        </nav>
+        <div class="sidebar-note">
+          <span class="note-icon">i</span>
+          <p><strong>Training boundary</strong><br>These are fictional exercises. Don't enter real passwords or test systems you don't own or have permission to assess.</p>
+        </div>
+      </aside>
+
+      <section class="workbench">
+        <div class="workbench-head">
+          <div><div class="eyebrow" id="module-kicker">MODULE 01 / AWARENESS</div><h2 id="module-title">Signal spotting</h2></div>
+          <div class="module-tag" id="module-tag">INTERACTIVE EXERCISE</div>
+        </div>
+        <div id="module-content" class="module-content"></div>
+        <div class="workbench-foot"><span>CYBERLAB / PRACTICE ENVIRONMENT</span><span id="module-count">01 — 05</span></div>
+      </section>
+    </section>
+    <footer><span>CYBERLAB © 2026</span><span>STAY CURIOUS. VERIFY FIRST.</span><span>BUILT FOR LEARNING</span></footer>
+  </main>
+</body>
+</html>
